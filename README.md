@@ -6,19 +6,6 @@ automáticamente cuando el código trae un secreto harcodeado o una falla de
 seguridad básica (inyección SQL), usando dos herramientas reales:
 **detect-secrets** (análisis de secretos) y **Semgrep** (SAST).
 
-## Por qué GitHub Actions y no Jenkins
-
-Para una demo en vivo de 10–12 minutos, **GitHub Actions** es la opción más
-segura: no hay nada que instalar ni un servidor que mantener vivo — el
-pipeline corre en la nube de GitHub en cuanto haces `git push`, y el
-resultado (✅/❌) aparece solo en la pestaña **Actions** del repositorio.
-Jenkins exige instalar y configurar un servidor (Java, plugins, un agente),
-lo cual añade un punto de falla justo el día de la sustentación y consume
-minutos de tus 10–12 disponibles solo en arrancarlo. Si de verdad quieres
-mostrar Jenkins porque lo pide el docente o por aprendizaje, la sección
-"Alternativa con Jenkins" de `docs/GUION_EXPOSICION.md` explica cómo adaptar
-exactamente este mismo pipeline.
-
 ## Qué contiene
 
 ```
