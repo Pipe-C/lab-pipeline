@@ -52,3 +52,19 @@ jobs:
           config: >-
             .semgrep/sql-injection.yml
             p/owasp-top-ten
+
+  sonarqube-scan:
+    name: Calidad y seguridad del código (SonarQube Cloud)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+        with:
+          # SonarQube necesita el historial completo (no un clon superficial)
+          # para que su reporte de "nuevo código" sea preciso.
+          fetch-depth: 0
+
+      - name: Ejecutar el análisis de SonarQube Cloud
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

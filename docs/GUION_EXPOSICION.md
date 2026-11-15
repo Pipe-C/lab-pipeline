@@ -126,6 +126,64 @@ vulnerabilidades.
    `bash docs/demo_local.sh` en tu terminal — hace exactamente lo mismo,
    sin depender de internet, y muestra ❌/✅ en segundos.
 
+## D. Añadir SonarQube Cloud como tercer escáner (opcional, recomendado)
+
+La guía del tema sugiere SonarQube como una de las herramientas posibles.
+El workflow (`devsecops.yml`) ya trae el tercer job listo
+(`sonarqube-scan`); solo falta conectarlo a una cuenta de SonarQube Cloud
+—la versión en la nube, gratis para repos privados hasta 50 000 líneas,
+que es justo tu caso—. Importante: el nombre cambió hace poco (antes
+"SonarCloud"), y la Action vieja (`sonarcloud-github-action`) está
+deprecada — el workflow ya usa la correcta (`SonarSource/sonarqube-scan-action`).
+
+1. Ve a **https://sonarqube.com** (o directamente **sonarcloud.io**, que
+   redirige ahí) → **"Sign up"** → elige **"With GitHub"** → autoriza.
+2. Te va a pedir importar una organización: elige **Pipe-C** (tu cuenta de
+   GitHub) → cuando te pregunte a qué repositorios dar acceso, elige
+   **"Only select repositories"** y marca solo `lab-pipeline` (no le des
+   acceso a todos tus repos).
+3. Selecciona el repositorio para analizar. Cuando te pregunte el método
+   de análisis, elige **"With GitHub Actions"** (no "Automatic Analysis"
+   — quieres que corra dentro de tu propio pipeline, no por fuera).
+4. SonarQube Cloud te muestra en pantalla tres cosas — cópialas:
+   - Un **token** (secreto, solo se muestra una vez).
+   - Tu **Project Key** (algo como `Pipe-C_lab-pipeline`).
+   - Tu **Organization Key** (algo como `pipe-c`).
+5. Guarda el token como secreto en GitHub: en tu repositorio →
+   **Settings** → **Secrets and variables** → **Actions** → **"New
+   repository secret"** → Name: `SONAR_TOKEN` → Value: pega el token →
+   **"Add secret"**.
+6. Abre `sonar-project.properties` (en la raíz del repo) y reemplaza
+   `<TU_PROJECT_KEY>` y `<TU_ORGANIZACION>` por los valores del paso 4.
+7. Haz commit y push de ese archivo:
+   ```bash
+   git add sonar-project.properties
+   git commit -m "ci: agregar analisis de SonarQube Cloud"
+   git push
+   ```
+8. Entra de nuevo a la pestaña **Actions**: ahora deberías ver **3 jobs**
+   corriendo (secret-scan, sast-scan, sonarqube-scan). El de SonarQube
+   tarda un poco más (incluye subir el reporte a la nube). Si el Quality
+   Gate de SonarQube marca "Failed" (por el mismo secreto y la misma
+   inyección SQL — SonarQube también los detecta con sus propias reglas,
+   `python:S2068` y `python:S2077`), el job queda en rojo igual que los
+   otros dos.
+
+**Nota de honestidad:** esto no lo pude probar yo mismo de punta a punta
+—SonarQube Cloud exige una cuenta y un token propios, que no tengo—, así
+que pruébalo tú una vez, igual que hiciste con el resto, **antes** de la
+clase. Si algo no calza (nombre de job, versión de la Action), el enlace
+oficial de la Action es https://github.com/SonarSource/sonarqube-scan-action
+y ahí está la versión más reciente.
+
+**¿Vale la pena para la demo en vivo?** Si ya tienes GitHub Actions
+funcionando con los otros dos escáneres, SonarQube sí suma —especialmente
+para el 20% de "dominio conceptual" (mostrar que distintas herramientas
+convergen en los mismos hallazgos con reglas propias). Para los 10-12 min
+del Bloque 2, considera si prefieres gastar ese tiempo en 2 herramientas
+bien explicadas o 3 más rápido — con 3 jobs corriendo, la corrida completa
+tarda más (SonarQube sube datos a la nube), así que practica el tiempo.
+
 ## Bloque 1 — Fundamento técnico (máx. 5 min)
 
 Diapositivas: `cover`, `fundamento`, `flujo`.

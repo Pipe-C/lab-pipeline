@@ -24,8 +24,9 @@ exactamente este mismo pipeline.
 ```
 app/app.py                   La app "en vivo": arranca en versión vulnerable
 app/requirements.txt
-.github/workflows/devsecops.yml   El pipeline: detect-secrets + Semgrep
+.github/workflows/devsecops.yml   El pipeline: detect-secrets + Semgrep (+ SonarQube Cloud, opcional)
 .semgrep/sql-injection.yml        Regla propia de Semgrep (no depende de internet)
+sonar-project.properties          Config de SonarQube Cloud — ver docs/GUION_EXPOSICION.md § D
 docs/referencia/app_vulnerable.py Copia de referencia (fuera de app/, nunca se escanea)
 docs/referencia/app_corregida.py  Copia de referencia ya corregida
 docs/demo_local.sh                Plan de contingencia: la misma demo, en tu máquina
