@@ -1,0 +1,54 @@
+name: DevSecOps — SAST y Secret Scanning
+
+# Se ejecuta en cada push y en cada Pull Request hacia main.
+# Es justo lo que el profesor va a ver "en vivo" en la pestaña Actions.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  secret-scan:
+    name: Escaneo de secretos (detect-secrets)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar detect-secrets
+        run: pip install detect-secrets
+
+      - name: Escanear en busca de secretos harcodeados
+        # audit --fail-on-non-audited-potential-secrets no es necesario aquí:
+        # basta con que el reporte tenga al menos un resultado para fallar.
+        run: |
+          detect-secrets scan app/ > /tmp/secrets.json
+          python3 - <<'PY'
+          import json, sys
+          data = json.load(open("/tmp/secrets.json"))
+          if data["results"]:
+              print("::error:: Se encontraron posibles secretos harcodeados:")
+              print(json.dumps(data["results"], indent=2, ensure_ascii=False))
+              sys.exit(1)
+          print("No se encontraron secretos.")
+          PY
+
+  sast-scan:
+    name: Análisis estático (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Ejecutar Semgrep (regla propia + reglas OWASP del registro)
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            .semgrep/sql-injection.yml
+            p/owasp-top-ten

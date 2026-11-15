@@ -1,0 +1,18 @@
+rules:
+  - id: sql-injection-string-concat
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Posible inyección SQL: la consulta se construye concatenando una
+      cadena con una variable en lugar de usar parámetros (placeholders).
+      Esto permite que un atacante module la sentencia SQL manipulando la
+      entrada (ej. name = "' OR '1'='1").
+    metadata:
+      owasp: "A03:2021 - Injection"
+      cwe: "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+    patterns:
+      - pattern-either:
+          - pattern: $QUERY = "..." + $VAR
+          - pattern: $QUERY = $VAR + "..."
+          - pattern: $CUR.execute("..." + $VAR)
+    fix: $CUR.execute("SELECT ... WHERE name = ?", ($VAR,))
