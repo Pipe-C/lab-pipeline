@@ -27,9 +27,9 @@ docs/GUION_EXPOSICION.md          Guion minuto a minuto para los 3 bloques de la
 2. Una consulta SQL construida por concatenación de strings
    (`"...'" + name + "'"`), inyección SQL clásica.
 
-## Cómo probarlo tú mismo antes de la clase
+## Cómo probarlo 
 
-### Opción A — en GitHub (lo que vas a mostrar al profesor)
+### Opción A — en GitHub 
 
 0. **Crea el repositorio como privado.** GitHub tiene su propia protección
    ("push protection para usuarios"), activada por defecto en toda cuenta,
@@ -51,7 +51,7 @@ docs/GUION_EXPOSICION.md          Guion minuto a minuto para los 3 bloques de la
 4. Vuelve a la pestaña Actions: el mismo workflow ahora **pasa** (✅) —
    ese es tu "Bloque 3".
 
-### Opción B — en tu máquina (plan de contingencia)
+### Opción B — en tu máquina 
 
 ```bash
 bash docs/demo_local.sh
