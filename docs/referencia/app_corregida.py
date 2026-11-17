@@ -8,11 +8,15 @@ Correcciones:
 import os
 import sqlite3
 from flask import Flask, request
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+load_dotenv()
 
-# --- Corrección 1: el secreto se inyecta por entorno, nunca en el código ---
 PAYMENTS_API_KEY = os.environ.get("PAYMENTS_API_KEY")
+
+if not PAYMENTS_API_KEY:
+    raise RuntimeError("Configura PAYMENTS_API_KEY antes de iniciar la API")
 
 
 @app.route("/customers")
@@ -22,8 +26,6 @@ def search_customers():
     cur = conn.cursor()
     cur.execute("CREATE TABLE customers (id INTEGER, name TEXT)")
     cur.execute("INSERT INTO customers VALUES (1, 'Distribuidora Andina')")
-
-    # --- Corrección 2: consulta parametrizada, no hay forma de inyectar SQL ---
     cur.execute("SELECT * FROM customers WHERE name = ?", (name,))
     return {"results": cur.fetchall()}
 

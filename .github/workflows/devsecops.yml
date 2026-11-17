@@ -28,7 +28,7 @@ jobs:
         # audit --fail-on-non-audited-potential-secrets no es necesario aquí:
         # basta con que el reporte tenga al menos un resultado para fallar.
         run: |
-          detect-secrets scan app/ > /tmp/secrets.json
+          detect-secrets scan --all-files app/ frontend/src/ > /tmp/secrets.json
           python3 - <<'PY'
           import json, sys
           data = json.load(open("/tmp/secrets.json"))
