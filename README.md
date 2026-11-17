@@ -41,8 +41,6 @@ docs/referencia/app_corregida.py    Copia corregida de la API
 docs/referencia/config_vulnerable.ts  Copia vulnerable de la landing
 docs/referencia/config_corregido.ts   Copia corregida de la landing
 docs/demo_local.sh                  Misma demo en local, sin depender de la red
-docs/GUIA_DEMO.md                   Guía paso a paso de preparación y ejecución
-docs/GUION_EXPOSICION.md            Guion minuto a minuto de los 3 bloques
 docs/prompts/                       Dos prompts para agentes (pipeline y laboratorio)
 ```
 
