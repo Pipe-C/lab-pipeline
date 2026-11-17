@@ -34,7 +34,8 @@ frontend/.env.example               Plantilla pública de Vite (sin secretos)
 .env.example                        Plantilla del servidor (sin secretos reales)
 .github/workflows/devsecops.yml     Pipeline: detect-secrets + Semgrep (+ SonarQube opcional)
 .semgrep/sql-injection.yml          Regla propia de Semgrep, sin depender de internet
-sonar-project.properties            Config de SonarQube Cloud (rellenar antes de usarlo)
+.semgrepignore                      Excluye docs/referencia/ del SAST en GitHub
+sonar-project.properties            Config de SonarQube Cloud (opcional, no bloqueante)
 docs/referencia/app_vulnerable.py   Copia vulnerable de la API
 docs/referencia/app_corregida.py    Copia corregida de la API
 docs/referencia/config_vulnerable.ts  Copia vulnerable de la landing

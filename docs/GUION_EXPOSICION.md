@@ -144,12 +144,14 @@ vulnerabilidades.
    sin depender de internet, y muestra ❌/✅ en segundos. Al terminar deja el
    estado vulnerable restaurado.
 
-## D. Añadir SonarQube Cloud como tercer escáner (opcional, recomendado)
+## D. Añadir SonarQube Cloud como tercer escáner (opcional, no bloqueante)
 
 La guía del tema sugiere SonarQube como una de las herramientas posibles.
 El workflow (`devsecops.yml`) ya trae el tercer job listo
-(`sonarqube-scan`); solo falta conectarlo a una cuenta de SonarQube Cloud
-—la versión en la nube, con plan gratuito suficiente para este laboratorio—.
+(`sonarqube-scan`), pero está marcado como **opcional y no bloqueante**: si
+no hay `SONAR_TOKEN` o la organización no está configurada, el job se omite
+o falla sin poner rojo el pipeline. Los dos escáneres que sí deciden el
+resultado son detect-secrets y Semgrep.
 Importante: el nombre cambió hace poco (antes
 "SonarCloud"), y la Action vieja (`sonarcloud-github-action`) está
 deprecada — el workflow ya usa la correcta (`SonarSource/sonarqube-scan-action`).
