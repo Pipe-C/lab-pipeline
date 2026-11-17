@@ -5,15 +5,19 @@ demo práctica 50%, remediación 15%, participación y tiempo 15%).
 
 ## Antes de entrar a clase
 
-- [ ] Repositorio creado en GitHub **como privado** (ver README § Opción A,
-      paso 0 — así el push protection nativo de GitHub no te bloquea el
-      `git push` antes de que tu propio pipeline tenga oportunidad de
-      fallar, que es el punto de la demo), con este contenido subido y el
+- [ ] Repositorio creado en GitHub (idealmente privado; si terminas en
+      público —como pasó con `Pipe-C/lab-pipeline`, porque SonarQube no
+      dejaba dar acceso selectivo a un repo privado, sigue siendo seguro:
+      ver nota en la sección A, paso 2), con este contenido subido y el
       workflow ya corriendo al menos una vez (para que no haya sorpresas de
       permisos el día de la demo).
 - [ ] `app/app.py` en su estado **vulnerable** (el que trae por defecto).
 - [ ] `bash docs/demo_local.sh` probado al menos una vez en tu máquina.
-- [ ] El deck de 7 diapositivas abierto y probado.
+- [ ] `cd frontend && npm ci && npm run dev` probado: la landing abre y
+      muestra "Estado vulnerable" con la clave enmascarada.
+- [ ] El deck de 7 diapositivas abierto y probado, y el deck introductorio
+      de 5 diapositivas sobre "qué es un pipeline" (sección E) también
+      generado y revisado.
 - [ ] Video corto de respaldo grabado (tú mismo ejecutando la demo),
       por si falla la red del salón — la guía lo pide explícitamente.
 - [ ] Asignar quién habla en cada bloque (participación equitativa = 15%
@@ -27,7 +31,16 @@ demo práctica 50%, remediación 15%, participación y tiempo 15%).
    - Entra a github.com → botón **"+"** arriba a la derecha → **"New
      repository"**.
    - Nombre: `devsecops-lab` (o el que prefieras).
-   - Marca **Private** (no Public) — por la razón explicada arriba.
+   - Marca **Private** si puedes. Si vas a conectar SonarQube Cloud y no
+     te deja dar acceso selectivo a un repo privado (pasa con algunas
+     cuentas), pasarlo a **Public** es seguro en este proyecto puntual:
+     el secreto de ejemplo usa un formato genérico, no uno de un proveedor
+     real, así que el push protection de GitHub (que solo bloquea
+     formatos reconocidos como AWS/Stripe/etc. en repos públicos) no
+     interfiere, y tampoco borra nada de lo que ya subiste. Lo único que
+     cambia es que el código queda visible para cualquiera — sin problema
+     aquí porque no hay secretos ni datos reales, solo no repitas el mismo
+     secreto o estructura en un proyecto tuyo de verdad.
    - Deja todo lo demás sin marcar (sin README, sin .gitignore, sin
      licencia — ya los traes en la carpeta).
    - Click **"Create repository"**. GitHub te muestra una URL como
@@ -76,9 +89,9 @@ demo práctica 50%, remediación 15%, participación y tiempo 15%).
 
 ### B. ¿Qué pasa exactamente cuando hagas `git push` del código vulnerable?
 
-Para resolver tu duda concreta: con el repo en **privado** y el secreto en
-**formato genérico** (como ya quedó en este proyecto), el `git push` **no
-va a mostrarte ningún error en la terminal** — sube sin problema, en menos
+Para resolver tu duda concreta: con el repo en privado, o en público con
+el secreto en **formato genérico** (como ya quedó en este proyecto), el
+`git push` **no va a mostrarte ningún error en la terminal** — sube sin problema, en menos
 de un segundo. El "error" que vas a mostrar no aparece en la terminal:
 aparece como la ❌ roja en la pestaña **Actions** del navegador, 20–40
 segundos después del push, porque ahí es donde corre tu propio pipeline
@@ -96,43 +109,48 @@ vulnerabilidades.
 
 ### C. En clase, el momento de la demo (ya con el repo listo del paso A)
 
-1. **(1 min)** Abre `app/app.py` en el editor y en GitHub en el navegador,
-   lado a lado. Señala la línea del secreto y la línea de la consulta SQL
-   concatenada.
-2. **(1 min)** Abre la pestaña **Actions** de tu repositorio: ahí está el
+1. **(1 min)** Abre la landing (`cd frontend && npm run dev`) y señala el
+   panel "Estado actual del código": la clave aparece enmascarada y el
+   origen dice "hardcodeado en frontend/src/config.ts". Es el gancho visual.
+2. **(1 min)** Abre `app/app.py` y `frontend/src/config.ts` en el editor,
+   lado a lado con GitHub en el navegador. Señala la clave en ambos y la
+   consulta SQL concatenada en la API.
+3. **(1 min)** Abre la pestaña **Actions** de tu repositorio: ahí está el
    run que ya falló antes de clase. Click en él.
-3. **(3–4 min)** Entra al job **"Escaneo de secretos (detect-secrets)"**,
+4. **(3–4 min)** Entra al job **"Escaneo de secretos (detect-secrets)"**,
    expande el paso "Escanear en busca de secretos harcodeados" y lee en
-   voz alta lo que el log reporta (tipo de secreto, archivo, línea). Repite
-   con el job **"Análisis estático (Semgrep)"** y lee el mensaje sobre la
-   inyección SQL. Explica: "esto lo encontró el pipeline solo, sin que
+   voz alta lo que el log reporta: dos archivos, tipo de secreto y línea.
+   Repite con el job **"Análisis estático (Semgrep)"** y lee el mensaje sobre
+   la inyección SQL. Explica: "esto lo encontró el pipeline solo, sin que
    nadie lo ejecutara a mano, antes de que el código llegara a producción."
-4. **(1 min)** En tu terminal, con la clase viendo tu pantalla, corrige el
+5. **(1 min)** En tu terminal, con la clase viendo tu pantalla, corrige el
    código:
    ```bash
    cp docs/referencia/app_corregida.py app/app.py
+   cp docs/referencia/config_corregido.ts frontend/src/config.ts
    ```
-5. **(1 min)** Sube la corrección:
+6. **(1 min)** Sube la corrección:
    ```bash
    git add -A
-   git commit -m "fix(security): leer el secreto por variable de entorno y parametrizar la consulta SQL"
+   git commit -m "fix(security): externalizar secreto y parametrizar consulta SQL"
    git push
    ```
-6. **(2–3 min)** Vuelve al navegador, pestaña Actions: espera 20–40
+7. **(2–3 min)** Vuelve al navegador, pestaña Actions: espera 20–40
    segundos y refresca — aparece un nuevo run, esta vez con ✅ verde en los
-   dos jobs. Señala el contraste: "mismo repositorio, mismo pipeline, el
-   único cambio fue el código."
-7. **Si algo falla en vivo** (red del salón, GitHub lento): corre
+   dos jobs. Muestra también la landing recargada: ahora dice "Estado
+   corregido" y "no disponible en el bundle".
+8. **Si algo falla en vivo** (red del salón, GitHub lento): corre
    `bash docs/demo_local.sh` en tu terminal — hace exactamente lo mismo,
-   sin depender de internet, y muestra ❌/✅ en segundos.
+   sin depender de internet, y muestra ❌/✅ en segundos. Al terminar deja el
+   estado vulnerable restaurado.
 
 ## D. Añadir SonarQube Cloud como tercer escáner (opcional, recomendado)
 
 La guía del tema sugiere SonarQube como una de las herramientas posibles.
 El workflow (`devsecops.yml`) ya trae el tercer job listo
 (`sonarqube-scan`); solo falta conectarlo a una cuenta de SonarQube Cloud
-—la versión en la nube, gratis para repos privados hasta 50 000 líneas,
-que es justo tu caso—. Importante: el nombre cambió hace poco (antes
+—la versión en la nube, con plan gratuito suficiente para este laboratorio—.
+Importante: el nombre cambió hace poco (antes
 "SonarCloud"), y la Action vieja (`sonarcloud-github-action`) está
 deprecada — el workflow ya usa la correcta (`SonarSource/sonarqube-scan-action`).
 
@@ -184,19 +202,99 @@ del Bloque 2, considera si prefieres gastar ese tiempo en 2 herramientas
 bien explicadas o 3 más rápido — con 3 jobs corriendo, la corrida completa
 tarda más (SonarQube sube datos a la nube), así que practica el tiempo.
 
+## E. Deck introductorio — "¿Qué es un pipeline?" (5 diapositivas, antes del Bloque 1)
+
+Para que el Bloque 1 no empiece directo en SAST/secret scanning sin dar
+contexto, agrega un mini-deck de 5 diapositivas genéricas sobre pipelines
+CI/CD (qué son, para qué sirven, qué beneficios dan), generado con una IA
+de diapositivas. Prompt listo para pegar:
+
+```
+Crea una presentación de exactamente 5 diapositivas, en español, para una
+exposición universitaria de Seguridad Informática (nivel pregrado). El
+público ya conoce qué es un pipeline de CI/CD; estas diapositivas son el
+complemento introductorio antes de entrar en detalle, así que deben
+explicar el concepto en general sin profundizar aún en seguridad.
+
+Tema: "¿Qué es un pipeline de CI/CD, para qué sirve y qué beneficios
+ofrece?"
+
+Estructura exacta:
+
+1. Portada: título "Pipelines CI/CD: la línea de ensamblaje del software",
+   con un subtítulo breve.
+
+2. "¿Qué es un pipeline?" — definición en una sola frase (una secuencia
+   automatizada de pasos que lleva el código desde que un desarrollador lo
+   escribe hasta que llega a producción) + un diagrama de flujo simple con
+   estas etapas en cajas conectadas por flechas: Commit → Build → Test →
+   Scan → Deploy. Nada de párrafos largos.
+
+3. "Pipelines reales que existen hoy" — una tabla o tarjetas comparando 4
+   herramientas reales con una frase corta cada una sobre su caso de uso
+   típico: Jenkins (self-hosted, el más veterano y configurable), GitHub
+   Actions (integrado nativamente en GitHub, el más usado en proyectos
+   open source), GitLab CI/CD (integrado en GitLab, fuerte en empresas que
+   ya usan esa plataforma), Azure Pipelines / CircleCI (alternativas en la
+   nube, buena integración con otros servicios de nube).
+
+4. "¿Para qué sirve en la práctica?" — 3 o 4 bullets cortos (máximo 6
+   palabras cada uno): evita errores humanos repetitivos, detecta fallas
+   antes de que lleguen al usuario final, acelera el ciclo de entrega,
+   deja un registro auditable de cada cambio.
+
+5. "Beneficios clave" — cierre con 3 beneficios concretos y medibles:
+   menos tiempo entre escribir código y que esté en producción, bugs
+   detectados en minutos en vez de días, y la posibilidad de automatizar
+   controles de calidad y seguridad (gancho para conectar con la siguiente
+   parte de la exposición, que sí entra en SAST y secret scanning).
+
+Estilo visual: tema oscuro, estética técnica/profesional (no corporativo
+genérico ni colorido), tipografía sans-serif limpia, máximo 1 diagrama o
+tabla por diapositiva, nada de texto en párrafos largos ni viñetas de más
+de una línea, nada de imágenes decorativas sin relación con el contenido.
+```
+
+**Dónde encaja en el tiempo:** la guía del laboratorio limita el Bloque 1
+completo (fundamento técnico) a **máximo 5 minutos**, y ya lo teníamos
+lleno con las 3 diapositivas propias (`cover`, `fundamento`, `flujo`). Si
+sumas estas 5 más sin ajustar nada, el Bloque 1 se estira a 8 diapositivas
+en 5 minutos (~37 s cada una) — posible, pero exige ir rápido. Dos formas
+de resolverlo, elige una:
+
+- **Opción recomendada — fusionar, no sumar tiempo:** usa las 5
+  diapositivas nuevas como reemplazo de la diapositiva `cover` propia (que
+  ya decías rápido), pasando por ellas en ~15 s cada una (es contenido que
+  el público ya conoce en términos generales, así que no te detengas a
+  explicar cada tarjeta de la diapositiva 3, solo nómbralas). Eso deja los
+  mismos 5 minutos repartidos así: ~1.5 min para las 5 nuevas (repaso
+  rápido) + ~2 min en `fundamento` (SAST/secret scanning, lo nuevo de
+  verdad) + ~1.5 min en `flujo`.
+- **Alternativa:** pide explícitamente al docente si el Bloque 1 puede
+  extenderse un poco a costa del cierre/preguntas, ya que es contenido de
+  base que facilita entender el resto — pero no asumas que te lo van a
+  dar; prepárate para la Opción recomendada de todas formas.
+
 ## Bloque 1 — Fundamento técnico (máx. 5 min)
 
-Diapositivas: `cover`, `fundamento`, `flujo`.
+Diapositivas: deck introductorio de la sección E (repaso rápido) →
+`cover`, `fundamento`, `flujo`.
 
 Guion:
-1. (30 s) Portada: nombrar el tema y las 3 herramientas.
-2. (2 min) "¿Qué es SAST? ¿Qué es secret scanning?" — usar la diapositiva
+1. (1–1.5 min) Deck introductorio (sección E): repaso rápido de qué es un
+   pipeline, mencionar las herramientas reales (Jenkins, GitHub Actions,
+   GitLab CI, etc.) y los beneficios generales — sin detenerte, es
+   contexto, no el contenido nuevo.
+2. (15 s) Portada propia (`cover`): nombrar el tema específico y las 3
+   herramientas que SÍ vas a usar en la demo (detect-secrets, Semgrep,
+   SonarQube Cloud).
+3. (2 min) "¿Qué es SAST? ¿Qué es secret scanning?" — usar la diapositiva
    `fundamento`, explicar con tus palabras, sin leer.
-3. (1.5 min) Diapositiva `flujo`: señalar cada caja mientras hablas —
+4. (1.5 min) Diapositiva `flujo`: señalar cada caja mientras hablas —
    "cuando hacemos push, GitHub Actions dispara el pipeline, que corre los
-   dos escáneres, y según el resultado el pipeline queda en verde o en
+   escáneres, y según el resultado el pipeline queda en verde o en
    rojo — sin que nadie tenga que revisarlo a mano".
-4. (1 min) Impacto real: una credencial filtrada (de AWS, de una
+5. (1 min) Impacto real: una credencial filtrada (de AWS, de una
    pasarela de pagos, de cualquier servicio) permite a cualquiera usarla
    en nombre de la empresa; una inyección SQL permite leer o borrar toda
    la base de datos.
@@ -207,17 +305,21 @@ Diapositivas de apoyo: `demo`, `hallazgos` (se usan rápido, el protagonista
 es el navegador con GitHub abierto). El guion comando a comando de este
 bloque es la sección **C** de arriba ("En clase, el momento de la demo") —
 ya asume que hiciste la preparación de la sección **A** antes de llegar.
-Resumen de tiempos: 1 min mostrando el código, 1 min abriendo el run que ya
-falló, 3–4 min leyendo los hallazgos en los logs, 1 min corrigiendo, 1 min
-con el push de la corrección, 2–3 min mostrando el run en verde.
+Resumen de tiempos: 1 min mostrando la landing vulnerable, 1 min mostrando
+el código, 1 min abriendo el run que ya falló, 3–4 min leyendo los hallazgos
+en los logs, 1 min corrigiendo, 1 min con el push de la corrección, 2–3 min
+mostrando el run en verde y la landing corregida.
 
 ## Bloque 3 — Remediación y mitigación (3 min)
 
 Diapositivas: `remediacion`.
 
-1. (1 min) Secreto → variable de entorno: nunca en el código, nunca en el
-   historial de Git (si ya se filtró, hay que rotar la credencial, no solo
-   borrarla del código — el historial de Git la conserva).
+1. (1 min) Secreto → variable de entorno: muestra `.env.example` y
+   `frontend/.env.example` como plantillas sin valores reales, y recuerda que
+   `.env` está en `.gitignore`. Nunca en el código, nunca en el historial de
+   Git (si ya se filtró, hay que rotar la credencial, no solo borrarla del
+   código). Aclara que las variables `VITE_*` son públicas: la clave de pagos
+   solo la lee el backend.
 2. (1 min) SQL → consulta parametrizada: el motor de base de datos trata el
    valor como dato, nunca como parte de la sentencia SQL.
 3. (1 min) A nivel de arquitectura: "branch protection rules" en GitHub
@@ -231,6 +333,16 @@ docente — practica explicar la diferencia entre SAST (analiza el código,
 sin ejecutarlo) y DAST (ataca la aplicación corriendo, como hicieron con
 OWASP ZAP en el laboratorio anterior) por si la preguntan para conectar
 ambos temas.
+
+## Recursos incluidos en el repo
+
+- `docs/GUIA_DEMO.md`: preparación paso a paso, comandos exactos y plan de
+  contingencia.
+- `docs/prompts/PROMPT_PIPELINE.md`: prompt para que un agente explique el
+  pipeline a otro compañero.
+- `docs/prompts/PROMPT_LABORATORIO.md`: prompt para que un agente explique el
+  laboratorio completo y la remediación.
+- `.env.example` y `frontend/.env.example`: plantillas sin secretos reales.
 
 ---
 

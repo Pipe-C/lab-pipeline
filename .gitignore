@@ -2,4 +2,12 @@
 __pycache__/
 *.pyc
 .DS_Store
-GUION_EXPOSICION.md
+
+# Entornos locales con valores reales. Las plantillas .env.example sí se versionan.
+.env
+.env.*
+!.env.example
+
+# Dependencias y salida del frontend.
+frontend/node_modules/
+frontend/dist/

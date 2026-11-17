@@ -1,71 +1,122 @@
 # Laboratorio DevSecOps — Automatización de pruebas de seguridad en CI/CD
 
 Tema 7 de la exposición: **Automatización de Pruebas de Seguridad en
-Pipelines CI/CD**. Un pipeline de GitHub Actions que bloquea el despliegue
+Pipelines CI/CD**. Un pipeline de GitHub Actions que bloquea el cambio
 automáticamente cuando el código trae un secreto harcodeado o una falla de
 seguridad básica (inyección SQL), usando dos herramientas reales:
 **detect-secrets** (análisis de secretos) y **Semgrep** (SAST).
 
+La demo tiene dos piezas visibles: una API Flask mínima y una landing Vite +
+TypeScript que se abre con `npm run dev`. El mismo secreto de ejemplo aparece
+en ambas a propósito, para que el escaneo de secretos muestre hallazgos en
+backend y frontend.
+
+## Por qué GitHub Actions y no Jenkins
+
+Para una demo en vivo de 10–12 minutos, **GitHub Actions** es la opción más
+segura: no hay nada que instalar ni un servidor que mantener vivo; el
+pipeline corre en la nube de GitHub en cuanto haces `git push`, y el
+resultado (✅/❌) aparece solo en la pestaña **Actions** del repositorio.
+Jenkins exige instalar y configurar un servidor (Java, plugins, un agente),
+lo cual añade un punto de falla justo el día de la sustentación. Si de verdad
+quieres mostrar Jenkins porque lo pide el docente, la sección "Alternativa
+con Jenkins" de `docs/GUION_EXPOSICION.md` explica cómo adaptar este mismo
+pipeline.
+
 ## Qué contiene
 
 ```
-app/app.py                   La app "en vivo": arranca en versión vulnerable
-app/requirements.txt
-.github/workflows/devsecops.yml   El pipeline: detect-secrets + Semgrep (+ SonarQube Cloud, opcional)
-.semgrep/sql-injection.yml        Regla propia de Semgrep (no depende de internet)
-sonar-project.properties          Config de SonarQube Cloud — ver docs/GUION_EXPOSICION.md § D
-docs/referencia/app_vulnerable.py Copia de referencia (fuera de app/, nunca se escanea)
-docs/referencia/app_corregida.py  Copia de referencia ya corregida
-docs/demo_local.sh                Plan de contingencia: la misma demo, en tu máquina
-docs/GUION_EXPOSICION.md          Guion minuto a minuto para los 3 bloques de la exposición
+app/app.py                          API vulnerable: secreto + inyección SQL
+app/requirements.txt                Flask + python-dotenv
+frontend/                           Landing Vite + TypeScript (npm run dev)
+frontend/src/config.ts              Estado vulnerable: clave harcodeada
+frontend/.env.example               Plantilla pública de Vite (sin secretos)
+.env.example                        Plantilla del servidor (sin secretos reales)
+.github/workflows/devsecops.yml     Pipeline: detect-secrets + Semgrep (+ SonarQube opcional)
+.semgrep/sql-injection.yml          Regla propia de Semgrep, sin depender de internet
+sonar-project.properties            Config de SonarQube Cloud (rellenar antes de usarlo)
+docs/referencia/app_vulnerable.py   Copia vulnerable de la API
+docs/referencia/app_corregida.py    Copia corregida de la API
+docs/referencia/config_vulnerable.ts  Copia vulnerable de la landing
+docs/referencia/config_corregido.ts   Copia corregida de la landing
+docs/demo_local.sh                  Misma demo en local, sin depender de la red
+docs/GUIA_DEMO.md                   Guía paso a paso de preparación y ejecución
+docs/GUION_EXPOSICION.md            Guion minuto a minuto de los 3 bloques
+docs/prompts/                       Dos prompts para agentes (pipeline y laboratorio)
 ```
 
-`app/app.py` empieza en su estado **vulnerable** (dos fallas a propósito):
+`app/app.py` y `frontend/src/config.ts` empiezan en estado vulnerable:
 
-1. Credenciales de AWS harcodeadas en el código (`AWS_ACCESS_KEY_ID`,
-   `AWS_SECRET_ACCESS_KEY`).
-2. Una consulta SQL construida por concatenación de strings
-   (`"...'" + name + "'"`), inyección SQL clásica.
+1. Credencial de pasarela de pagos escrita en el código, con formato genérico
+   a propósito (no AWS/Stripe/GitHub) para que el *push protection* de GitHub
+   no interfiera en un repo público.
+2. Una consulta SQL construida por concatenación (`"...'" + name + "'"`),
+   inyección SQL clásica detectada por Semgrep.
 
-## Cómo probarlo 
+## Variables de entorno: cómo sí hacerlo
 
-### Opción A — en GitHub 
+- `.env.example` y `frontend/.env.example` son plantillas versionadas. Solo
+  contienen marcadores de posición, sin comillas alrededor del valor: así
+  `detect-secrets` no confunde un ejemplo con una credencial real.
+- `.env` y `frontend/.env` están en `.gitignore`. Ahí sí van los valores
+  locales reales, que nunca se suben.
+- En PowerShell puedes cargar la variable del servidor sin comillas en el
+  comando: `$env:PAYMENTS_API_KEY = valor-local-de-prueba`. La API corregida
+  también carga `.env` automáticamente con `python-dotenv`.
+- Las variables `VITE_*` del frontend se incrustan en el bundle y son
+  **públicas**. Por eso la clave de pagos nunca debe vivir ahí: la lee solo el
+  backend desde su entorno.
 
-0. **Crea el repositorio como privado.** GitHub tiene su propia protección
-   ("push protection para usuarios"), activada por defecto en toda cuenta,
-   que bloquea el `git push` mismo —antes de que corra tu pipeline— si
-   detecta un secreto con formato de un proveedor conocido (AWS, Stripe,
-   etc.), pero **solo en repositorios públicos**. Si el repo es privado,
-   esa protección no actúa, y el que atrapa el secreto es tu propio
-   pipeline (`detect-secrets` + Semgrep) — que es justo lo que quieres
-   mostrar. Por eso además el secreto de ejemplo (`PAYMENTS_API_KEY`) usa
-   un formato genérico y no uno de un proveedor real: así, aunque alguien
-   use el repo como público, GitHub no interfiere con la demo.
-1. Sube esta carpeta completa
-   (`git init && git add -A && git commit -m "estado vulnerable" && git push`).
-2. Ve a la pestaña **Actions** de tu repositorio: el workflow
-   "DevSecOps — SAST y Secret Scanning" corre solo y **falla** (❌) en los
-   dos jobs — ese es tu "Bloque 2" en vivo.
-3. Reemplaza el contenido de `app/app.py` por el de
-   `docs/referencia/app_corregida.py`, haz commit y push de nuevo.
-4. Vuelve a la pestaña Actions: el mismo workflow ahora **pasa** (✅) —
-   ese es tu "Bloque 3".
+## Cómo probarlo antes de clase
 
-### Opción B — en tu máquina 
+La secuencia completa, con todos los comandos, está en `docs/GUIA_DEMO.md`.
+Resumen:
+
+### En GitHub (lo que se muestra al profesor)
+
+1. El repositorio es público (`Pipe-C/lab-pipeline`). Eso es seguro aquí
+   porque no hay credenciales reales ni datos privados.
+2. Sube el estado vulnerable. El workflow falla (❌) en detect-secrets y
+   Semgrep; en la pestaña **Actions** verás los hallazgos de la API y de la
+   landing.
+3. Abre la landing en local:
+
+   ```bash
+   cd frontend
+   npm ci
+   npm run dev
+   ```
+
+4. En clase, copia las dos correcciones y vuelve a subir:
+
+   ```bash
+   cp docs/referencia/app_corregida.py app/app.py
+   cp docs/referencia/config_corregido.ts frontend/src/config.ts
+   git add -A
+   git commit -m "fix(security): externalizar secreto y parametrizar consulta SQL"
+   git push
+   ```
+
+5. El mismo workflow ahora pasa (✅). La landing muestra "Estado corregido" y
+   "Sin secretos en el bundle".
+
+### En tu máquina (plan de contingencia)
 
 ```bash
 bash docs/demo_local.sh
 ```
 
-Corre exactamente los mismos dos escáneres, en el mismo orden, sobre la
-versión vulnerable y luego sobre la corregida, e imprime ❌/✅ igual que lo
-haría GitHub Actions. Dura segundos y no depende de la red del salón.
+Corre los mismos dos escáneres sobre la versión vulnerable y luego sobre la
+corregida, imprime ❌/✅ y al terminar restaura el estado vulnerable para que
+el repo quede listo para la demostración.
 
 ## Créditos de las herramientas
 
 - [detect-secrets](https://github.com/Yelp/detect-secrets) (Yelp, código
-  abierto) — escaneo de secretos.
-- [Semgrep](https://semgrep.dev/) (open source) — SAST, con una regla propia
+  abierto): escaneo de secretos.
+- [Semgrep](https://semgrep.dev/) (open source): SAST, con una regla propia
   (`.semgrep/sql-injection.yml`) que no depende de la red, más el registro
-  público `p/owasp-top-ten` cuando corre en GitHub Actions (si el salón de
-  clase sí tiene internet).
+  público `p/owasp-top-ten` cuando corre en GitHub Actions.
+- [Vite](https://vite.dev/) y TypeScript para la landing de ejemplo.
+- [Impeccable](https://impeccable.style/) como referencia de diseño de la
+  landing; el detector `npx impeccable detect` pasa sin hallazgos.
