@@ -1,26 +1,22 @@
 """
-API mínima de ejemplo para el laboratorio de DevSecOps (SAST + Secret Scanning).
+Versión corregida de la API de ejemplo (DevSecOps — SAST + Secret Scanning).
 
-Este archivo contiene, A PROPÓSITO, dos fallas que un pipeline de CI/CD
-debería atrapar antes de llegar a producción:
-
-  1. Una API key "harcodeada" (secreto en texto plano en el código).
-  2. Una consulta SQL construida por concatenación (inyección SQL),
-     el mismo tipo de hallazgo que un SAST como Semgrep marca.
-
-Nota: el secreto de abajo usa un formato GENÉRICO a propósito (no el de
-AWS/Stripe/GitHub/etc.) para que el push protection nativo de GitHub
-—que bloquea por defecto los formatos de proveedores conocidos en repos
-públicos— no interfiera con la demo. El que debe atraparlo es NUESTRO
-pipeline (detect-secrets + Semgrep), no el de GitHub.
+Correcciones:
+  1. El secreto ya no vive en el código: se lee de una variable de entorno.
+  2. La consulta SQL usa un parámetro (placeholder) en vez de concatenación.
 """
+import os
 import sqlite3
 from flask import Flask, request
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+load_dotenv()
 
-# --- Falla 1: secreto harcodeado (lo detecta detect-secrets / gitleaks) ---
-PAYMENTS_API_KEY = "cw9Lq3Xz7Hb2Vn5Rt8Yp1Ma4Kd6Jf0Se3Gh7Ux9"
+PAYMENTS_API_KEY = os.environ.get("PAYMENTS_API_KEY")
+
+if not PAYMENTS_API_KEY:
+    raise RuntimeError("Configura PAYMENTS_API_KEY antes de iniciar la API")
 
 
 @app.route("/customers")
@@ -30,10 +26,7 @@ def search_customers():
     cur = conn.cursor()
     cur.execute("CREATE TABLE customers (id INTEGER, name TEXT)")
     cur.execute("INSERT INTO customers VALUES (1, 'Distribuidora Andina')")
-
-    # --- Falla 2: SQL armado por concatenación (lo detecta Semgrep) ---
-    query = "SELECT * FROM customers WHERE name = '" + name + "'"
-    cur.execute(query)
+    cur.execute("SELECT * FROM customers WHERE name = ?", (name,))
     return {"results": cur.fetchall()}
 
 

@@ -22,7 +22,6 @@ app = Flask(__name__)
 # --- Falla 1: secreto harcodeado (lo detecta detect-secrets / gitleaks) ---
 PAYMENTS_API_KEY = "cw9Lq3Xz7Hb2Vn5Rt8Yp1Ma4Kd6Jf0Se3Gh7Ux9"
 
-
 @app.route("/customers")
 def search_customers():
     name = request.args.get("name", "")
